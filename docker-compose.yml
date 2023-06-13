@@ -4,6 +4,8 @@ services:
   mariadb:
     image: mariadb
     restart: always
+    ports:
+      - "3306:3306"
     networks:
       - db-network
     volumes:
@@ -14,6 +16,8 @@ services:
   postgres:
     image: postgres
     restart: always
+    ports:
+      - "5432:5432"
     networks:
       - db-network
     volumes:
@@ -21,13 +25,21 @@ services:
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
+  mongodb:
+    image: bitnami/mongodb:latest
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongodb:/bitnami/mongodb
+
   adminer:
     image: adminer
     restart: always
-    networks:
-      - db-network
     ports:
       - 8080:8080
+    networks:
+      - db-network
 
 networks:
   db-network:

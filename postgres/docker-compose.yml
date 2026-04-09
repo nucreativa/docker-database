@@ -1,0 +1,38 @@
+services:
+  databasus:
+    container_name: databasus
+    image: databasus/databasus:latest
+    ports:
+      - "4005:4005"
+    networks:
+      - postgres-network
+    volumes:
+      - ./databasus-data:/databasus-data
+    restart: unless-stopped
+
+  adminer:
+    image: adminer
+    ports:
+      - 8080:8080
+    networks:
+      - postgres-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    networks:
+      - postgres-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  postgres-network:
+    driver: bridge

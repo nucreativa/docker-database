@@ -1,0 +1,22 @@
+services:
+  mariadb:
+    image: mariadb:lts-ubi
+    ports:
+      - "3306:3306"
+    networks:
+      - mariadb-network
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+
+  adminer:
+    image: adminer
+    ports:
+      - 8080:8080
+    networks:
+      - mariadb-network
+    restart: unless-stopped
+
+networks:
+  mariadb-network:
+    driver: bridge

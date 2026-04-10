@@ -1,0 +1,22 @@
+services:
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    ports:
+      - 7700:7700
+    networks:
+      - meilisearch-network
+    volumes:
+      - ./meili_data:/meili_data
+    environment:
+      - master-key=${MASTER_KEY}
+
+  meilisearch-ui:
+    image: eyeix/meilisearch-ui:latest
+    ports:
+      - 24900:24900
+    networks:
+      - meilisearch-network
+
+networks:
+  meilisearch-network:
+    driver: bridge

@@ -6,7 +6,7 @@ services:
     networks:
       - meilisearch-network
     volumes:
-      - ./meili_data:/meili_data
+      - ./meili-data:/meili_data
     environment:
       - master-key=${MASTER_KEY}
 

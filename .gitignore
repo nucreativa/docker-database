@@ -1,5 +1,4 @@
 databasus-data/
-mongo-config/
-mongo-data/
-meili_data/
+*-config/
+*-data/
 .env

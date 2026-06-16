@@ -1,0 +1,122 @@
+services:
+  mariadb-primary:
+    image: mariadb:10.11.18
+    hostname: mariadb-primary
+    environment:
+      TZ: Asia/Jakarta
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+      MARIADB_DATABASE: appdb
+      MARIADB_USER: appuser
+      MARIADB_PASSWORD_FILE: /run/secrets/app_password
+    secrets:
+      - mysql_root_password
+      - app_password
+      - replication_password
+    configs:
+      - source: mariadb_primary_cnf
+        target: /etc/mysql/conf.d/90-primary.cnf
+        mode: 0444
+      - source: mariadb_primary_init_sql
+        target: /docker-entrypoint-initdb.d/10-primary-init.sql
+        mode: 0444
+    volumes:
+      - mariadb_primary_data:/var/lib/mysql
+      - mariadb_primary_logs:/var/log/mysql
+    networks:
+      - mariadb_net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mariadb-admin ping -h 127.0.0.1 -uroot -p$$(cat /run/secrets/mysql_root_password) --silent || exit 1",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.mariadb.primary == true
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 5
+      update_config:
+        order: start-first
+        failure_action: rollback
+      rollback_config:
+        order: stop-first
+    stop_grace_period: 1m
+
+  mariadb-replica:
+    image: mariadb:10.11.18
+    hostname: mariadb-replica
+    environment:
+      TZ: Asia/Jakarta
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+    secrets:
+      - mysql_root_password
+      - replication_password
+    configs:
+      - source: mariadb_replica_cnf
+        target: /etc/mysql/conf.d/90-replica.cnf
+        mode: 0444
+    volumes:
+      - mariadb_replica_data:/var/lib/mysql
+      - mariadb_replica_logs:/var/log/mysql
+    networks:
+      - mariadb_net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mariadb-admin ping -h 127.0.0.1 -uroot -p$$(cat /run/secrets/mysql_root_password) --silent || exit 1",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.mariadb.replica == true
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 5
+      update_config:
+        order: start-first
+        failure_action: rollback
+      rollback_config:
+        order: stop-first
+    stop_grace_period: 1m
+
+networks:
+  mariadb_net:
+    driver: overlay
+    attachable: true
+
+volumes:
+  mariadb_primary_data:
+  mariadb_primary_logs:
+  mariadb_replica_data:
+  mariadb_replica_logs:
+
+configs:
+  mariadb_primary_cnf:
+    file: ./config/primary.cnf
+  mariadb_replica_cnf:
+    file: ./config/replica.cnf
+  mariadb_primary_init_sql:
+    file: ./config/10-primary-init.sql
+
+secrets:
+  mysql_root_password:
+    external: true
+  app_password:
+    external: true
+  replication_password:
+    external: true
